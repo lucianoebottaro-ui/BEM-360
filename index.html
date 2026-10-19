@@ -119,7 +119,7 @@
 
 <script>
   (function () {
-    var MODO_AJUSTE = true; // true = muestra pitch/yaw al hacer clic
+    var MODO_AJUSTE = false; // true = muestra pitch/yaw al hacer clic
 
     // Rutas tal cual están en el repo (carpeta "fotos 360" con espacio,
     // nombres en minúscula salvo Bem2). El espacio va como %20.
@@ -160,24 +160,22 @@
     // flecha(yaw, destino, texto, targetYaw, pitch)
     var scenes = {
 
-      // Exterior — punto de partida, mirando a la puerta
       BEM8: {
         title: "Exterior",
         yaw: -5,
         panorama: FOTOS.BEM8,
         hotSpots: [
-          flecha(30, "BEM1", "Entrar", 15, -18),
+          flecha(1, "BEM1", "Entrar", 91, -21),
         ],
       },
 
-      // Nada más entrar (puerta a -95)
       BEM1: {
         title: "Entrada",
         yaw: 15,
         panorama: FOTOS.BEM1,
         hotSpots: [
           flecha(-95, "BEM8", "Salir", 175, -22),
-          flecha(15, "BEM2", "Avanzar", 20, -25),
+          flecha(83, "BEM2", "Avanzar", 86, -30),
         ],
       },
 
@@ -186,20 +184,19 @@
         yaw: 20,
         panorama: FOTOS.BEM2,
         hotSpots: [
-          flecha(-105, "BEM1", "Volver", -95, -22),
-          flecha(40, "BEM3", "Avanzar", 30, -25),
+          flecha(-92, "BEM1", "Volver", -95, -35),
+          flecha(83, "BEM3", "Avanzar", 89, -31),
         ],
       },
 
-      // Cruce: barra delante (BEM7), billar a la derecha (BEM4)
       BEM3: {
         title: "Frente a la barra",
         yaw: 30,
         panorama: FOTOS.BEM3,
         hotSpots: [
-          flecha(-140, "BEM2", "Volver", -160, -25),
+          flecha(-92, "BEM2", "Volver", -160, -37),
           flecha(0, "BEM7", "Ir a la barra", 0, -22),
-          flecha(55, "BEM4", "Ir al billar", 55, -25),
+          flecha(85, "BEM4", "Ir al billar", 90, -30),
         ],
       },
 
@@ -208,33 +205,30 @@
         yaw: 55,
         panorama: FOTOS.BEM4,
         hotSpots: [
-          flecha(-60, "BEM3", "Volver", -125, -25),
-          flecha(65, "BEM5", "Avanzar", 95, -22),
+          flecha(-90, "BEM3", "Volver", -125, -33),
+          flecha(85, "BEM5", "Avanzar", 95, -21),
         ],
       },
 
-      // Cámara sobre la mesa de billar
       BEM5: {
         title: "Mesa de billar",
         yaw: 95,
         panorama: FOTOS.BEM5,
         hotSpots: [
-          flecha(-45, "BEM4", "Volver", -125, -12),
-          flecha(95, "BEM6", "Avanzar", 15, -12),
+          flecha(-93, "BEM4", "Volver", -125, -29),
+          flecha(95, "BEM6", "Avanzar", 179, -22),
         ],
       },
 
-      // Segunda sala de billar — final del recorrido
       BEM6: {
         title: "Sala de billar",
         yaw: 15,
         panorama: FOTOS.BEM6,
         hotSpots: [
-          flecha(-170, "BEM5", "Volver", -85, -15),
+          flecha(-179, "BEM5", "Volver", -85, -26),
         ],
       },
 
-      // Barra — solo conecta con BEM3
       BEM7: {
         title: "Barra",
         yaw: 0,
