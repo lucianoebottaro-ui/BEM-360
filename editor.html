@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Editor de flechas — BEM 360</title>
+<!-- ============================================================
+  EDITOR VISUAL DE FLECHAS
+  Súbelo al repo junto al index.html y ábrelo en:
+  https://lucianoebottaro-ui.github.io/BEM-360/editor.html
+
+  Lee el index.html actual, te deja mover las flechas con clics
+  y te copia el index.html nuevo para pegarlo en GitHub.
+  No modifica nada por sí solo.
+============================================================= -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: flex;
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #121417;
+    color: #e9e9ea;
+  }
+  #side {
+    width: 360px;
+    flex: none;
+    overflow-y: auto;
+    padding: 16px;
+    border-right: 1px solid #2a2e33;
+  }
+  #pano { flex: 1; position: relative; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #8b929a;
+    margin: 20px 0 8px;
+  }
+  .help { color: #a6adb4; font-size: 13px; margin: 0 0 8px; }
+  ol.help { padding-left: 18px; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid #3a4047;
+    background: #1d2126;
+    color: #e9e9ea;
+    border-radius: 6px;
+    padding: 5px 9px;
+  }
+  button:hover { border-color: #6ee7c9; }
+  #scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+  #scenes button.cur { background: #6ee7c9; color: #0d1b24; border-color: #6ee7c9; font-weight: 600; }
+  .item {
+    border: 1px solid #2a2e33;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .item.sel { border-color: #ffb547; background: #2a2217; }
+  .item .top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .item .nums { color: #8b929a; font-size: 12px; font-family: ui-monospace, Consolas, monospace; }
+  .item input {
+    width: 100%;
+    margin-top: 6px;
+    font: inherit;
+    background: #121417;
+    color: #e9e9ea;
+    border: 1px solid #3a4047;
+    border-radius: 5px;
+    padding: 4px 6px;
+  }
+  .row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  #copy {
+    width: 100%;
+    margin-top: 22px;
+    padding: 10px;
+    background: #6ee7c9;
+    color: #0d1b24;
+    border-color: #6ee7c9;
+    font-weight: 600;
+  }
+  #msg { margin-top: 8px; font-size: 13px; color: #6ee7c9; min-height: 18px; }
+  #out { width: 100%; height: 140px; margin-top: 8px; display: none; font: 11px ui-monospace, monospace; }
+  #error { color: #ff8a8a; }
+
+  #hint {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    background: rgba(0,0,0,.8);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .pnlm-hotspot-base { background: none !important; }
+  .ed-hs {
+    width: 60px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .ed-hs img {
+    width: 54px;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,.85)) drop-shadow(0 0 2px rgba(0,0,0,.7));
+  }
+  .ed-hs.sel img {
+    filter: drop-shadow(0 0 8px #ffb547) drop-shadow(0 0 3px #ffb547);
+  }
+  .ed-hs span {
+    position: absolute;
+    top: 46px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,.8);
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .ed-hs.sel span { background: #ffb547; color: #1a1205; font-weight: 600; }
+
+  @media (max-width: 800px) {
+    body { flex-direction: column-reverse; }
+    #side { width: 100%; height: 45vh; border-right: 0; border-top: 1px solid #2a2e33; }
+  }
+</style>
+</head>
+<body>
+
+<div id="side">
+  <h1>Editor de flechas</h1>
+  <ol class="help">
+    <li>Elige la escena.</li>
+    <li>Pulsa una flecha (en la lista o en la foto); se pone naranja.</li>
+    <li>Haz clic en la foto donde la quieres. Arrastrar sigue girando la vista.</li>
+  </ol>
+  <p id="error"></p>
+
+  <h2>Escena</h2>
+  <div id="scenes"></div>
+
+  <h2>Flechas de esta escena</h2>
+  <div id="arrows"></div>
+
+  <h2>Vista al llegar a esta escena</h2>
+  <p class="help">Gira la foto hasta lo que quieres ver de frente al entrar y pulsa "Usar vista actual" en la llegada que quieras.</p>
+  <div id="arrivals"></div>
+
+  <button id="copy">Copiar código del index.html</button>
+  <div id="msg"></div>
+  <textarea id="out" readonly></textarea>
+</div>
+
+<div id="pano"><div id="hint">Cargando…</div></div>
+
+<script>
+(function () {
+  var TEMPLATE = "";
+  var ICON = "Iconos/avanzar.png";
+  var FIRST = "BEM8";
+  var ORDER = [];          // orden de escenas en el archivo
+  var S = {};              // escenas: {title, yaw, key, arrows:[{yaw,to,label,targetYaw,pitch}]}
+  var viewer = null;
+  var sel = null;          // índice de flecha seleccionada en la escena actual
+  var ignoreClick = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function norm(a) { a = Math.round(a); while (a > 180) a -= 360; while (a < -180) a += 360; return a; }
+
+  // ---------- 1. Leer el index.html actual ----------
+  fetch("index.html", { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(function (t) { TEMPLATE = t; parse(t); start(); })
+    .catch(function () {
+      $("error").textContent = "No he podido leer index.html. Este editor tiene que estar en la misma carpeta del repo que el index.html.";
+      $("hint").textContent = "Error al cargar";
+    });
+
+  function parse(t) {
+    var m = t.match(/var ICON_AVANZAR\s*=\s*"([^"]+)"/); if (m) ICON = m[1];
+    m = t.match(/firstScene:\s*"(\w+)"/); if (m) FIRST = m[1];
+
+    var files = {};
+    var fb = t.slice(t.indexOf("var FOTOS"), t.indexOf("};", t.indexOf("var FOTOS")));
+    fb.replace(/"(\w+)"\s*:\s*"([^"]+)"/g, function (_, k, v) { files[k] = v; });
+    window.__FILES = files;
+
+    var a = t.indexOf("var scenes = {"), b = t.indexOf("var viewer = pannellum");
+    var block = t.slice(a, b);
+    var re = /(\w+)\s*:\s*\{\s*title:\s*"([^"]*)",\s*yaw:\s*(-?[\d.]+),\s*panorama:\s*FOTOS\.(\w+),\s*hotSpots:\s*\[([\s\S]*?)\]\s*,?\s*\}/g;
+    var sm;
+    while ((sm = re.exec(block))) {
+      var arrows = [];
+      var fr = /flecha\(\s*(-?[\d.]+)\s*,\s*"(\w+)"\s*,\s*"([^"]*)"\s*(?:,\s*(-?[\d.]+))?\s*(?:,\s*(-?[\d.]+))?\s*\)/g, fm;
+      while ((fm = fr.exec(sm[5]))) {
+        arrows.push({
+          yaw: +fm[1], to: fm[2], label: fm[3],
+          targetYaw: fm[4] === undefined ? null : +fm[4],
+          pitch: fm[5] === undefined ? -30 : +fm[5],
+        });
+      }
+      S[sm[1]] = { title: sm[2], yaw: +sm[3], key: sm[4], arrows: arrows };
+      ORDER.push(sm[1]);
+    }
+    if (!ORDER.length) $("error").textContent = "No he encontrado las escenas dentro del index.html.";
+  }
+
+  // ---------- 2. Visor ----------
+  function hsFor(sid, i) {
+    var a = S[sid].arrows[i];
+    return {
+      id: sid + "-" + i,
+      pitch: a.pitch,
+      yaw: a.yaw,
+      type: "info",
+      createTooltipFunc: function (div) {
+        div.classList.add("ed-hs");
+        if (sel === i && viewer && viewer.getScene() === sid) div.classList.add("sel");
+        div.innerHTML = '<img src="' + esc(ICON) + '" alt=""><span>' + esc(a.label) + " → " + esc(a.to) + "</span>";
+        div.addEventListener("pointerdown", function (e) {
+          ignoreClick = true;
+          e.stopPropagation();
+          select(i);
+        });
+      },
+    };
+  }
+
+  function start() {
+    var scenes = {};
+    ORDER.forEach(function (sid) {
+      var hs = [];
+      S[sid].arrows.forEach(function (_, i) { hs.push(hsFor(sid, i)); });
+      scenes[sid] = { title: S[sid].title, yaw: S[sid].yaw, panorama: window.__FILES[S[sid].key], hotSpots: hs };
+    });
+    viewer = pannellum.viewer("pano", {
+      default: { firstScene: FIRST, sceneFadeDuration: 400, autoLoad: true, compass: false },
+      scenes: scenes,
+    });
+    viewer.on("scenechange", function () { sel = null; renderSide(); });
+    viewer.on("load", function () { renderSide(); });
+    setupClick();
+    renderSide();
+  }
+
+  function refreshScene(sid) {
+    S[sid].arrows.forEach(function (_, i) {
+      viewer.removeHotSpot(sid + "-" + i, sid);
+      viewer.addHotSpot(hsFor(sid, i), sid);
+    });
+  }
+
+  function select(i) {
+    sel = (sel === i) ? null : i;
+    refreshScene(viewer.getScene());
+    renderSide();
+  }
+
+  // Clic (sin arrastrar) sobre la foto = colocar la flecha seleccionada
+  function setupClick() {
+    var box = $("pano"), down = null;
+    box.addEventListener("pointerdown", function (e) { down = { x: e.clientX, y: e.clientY }; }, true);
+    box.addEventListener("pointerup", function (e) {
+      if (ignoreClick) { ignoreClick = false; down = null; return; }
+      if (!down || sel === null) { down = null; return; }
+      var moved = Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y);
+      down = null;
+      if (moved > 6) return;
+      if (e.target.closest && e.target.closest(".pnlm-controls-container, .pnlm-hotspot")) return;
+      var c = viewer.mouseEventToCoords(e);
+      var sid = viewer.getScene();
+      S[sid].arrows[sel].pitch = Math.round(c[0]);
+      S[sid].arrows[sel].yaw = norm(c[1]);
+      refreshScene(sid);
+      renderSide();
+      flash("Flecha movida. Cuando acabes, pulsa «Copiar código».");
+    }, true);
+  }
+
+  // ---------- 3. Panel lateral ----------
+  function renderSide() {
+    if (!viewer) return;
+    var cur = viewer.getScene();
+
+    $("scenes").innerHTML = "";
+    ORDER.forEach(function (sid) {
+      var b = document.createElement("button");
+      b.textContent = sid + " · " + S[sid].title;
+      if (sid === cur) b.className = "cur";
+      b.onclick = function () { viewer.loadScene(sid); };
+      $("scenes").appendChild(b);
+    });
+
+    $("hint").textContent = sel === null
+      ? cur + " — pulsa una flecha para seleccionarla"
+      : "Haz clic donde quieres «" + S[cur].arrows[sel].label + "»";
+
+    var box = $("arrows"); box.innerHTML = "";
+    S[cur].arrows.forEach(function (a, i) {
+      var d = document.createElement("div");
+      d.className = "item" + (sel === i ? " sel" : "");
+      d.innerHTML =
+        '<div class="top"><strong>' + esc(a.label) + " → " + esc(a.to) + '</strong>' +
+        '<span class="nums">yaw ' + a.yaw + " · pitch " + a.pitch + "</span></div>" +
+        '<input value="' + esc(a.label) + '" title="Texto de la flecha" />' +
+        '<div class="row"><button data-go>Probar flecha</button></div>';
+      d.onclick = function (e) { if (e.target.tagName !== "INPUT" && !e.target.hasAttribute("data-go")) select(i); };
+      d.querySelector("input").onchange = function (e) { a.label = e.target.value.replace(/"/g, "'"); refreshScene(cur); renderSide(); };
+      d.querySelector("[data-go]").onclick = function () {
+        viewer.loadScene(a.to, 0, a.targetYaw === null ? "sameAzimuth" : a.targetYaw);
+      };
+      box.appendChild(d);
+    });
+    if (!S[cur].arrows.length) box.innerHTML = '<p class="help">Esta escena no tiene flechas.</p>';
+
+    var arr = $("arrivals"); arr.innerHTML = "";
+    if (cur === FIRST) {
+      arr.appendChild(arrivalItem("Inicio del recorrido", "yaw " + S[cur].yaw, function () {
+        S[cur].yaw = norm(viewer.getYaw());
+      }, S[cur].yaw));
+    }
+    ORDER.forEach(function (sid) {
+      S[sid].arrows.forEach(function (a) {
+        if (a.to !== cur) return;
+        arr.appendChild(arrivalItem(
+          "Desde " + sid + " («" + a.label + "»)",
+          "yaw " + (a.targetYaw === null ? "—" : a.targetYaw),
+          function () { a.targetYaw = norm(viewer.getYaw()); },
+          a.targetYaw
+        ));
+      });
+    });
+  }
+
+  function arrivalItem(name, nums, setFn, yaw) {
+    var d = document.createElement("div");
+    d.className = "item";
+    d.style.cursor = "default";
+    d.innerHTML =
+      '<div class="top"><strong>' + esc(name) + '</strong><span class="nums">' + esc(nums) + "</span></div>" +
+      '<div class="row"><button data-set>Usar vista actual</button><button data-see>Ver</button></div>';
+    d.querySelector("[data-set]").onclick = function () { setFn(); renderSide(); flash("Vista de llegada guardada."); };
+    d.querySelector("[data-see]").onclick = function () { if (yaw !== null) viewer.lookAt(0, yaw, undefined, 600); };
+    return d;
+  }
+
+  var flashT;
+  function flash(t) { $("msg").textContent = t; clearTimeout(flashT); flashT = setTimeout(function () { $("msg").textContent = ""; }, 4000); }
+
+  // ---------- 4. Generar el index.html nuevo ----------
+  function build() {
+    var L = [];
+    L.push("    var scenes = {");
+    ORDER.forEach(function (sid) {
+      var s = S[sid];
+      L.push("");
+      L.push("      " + sid + ": {");
+      L.push('        title: "' + s.title + '",');
+      L.push("        yaw: " + s.yaw + ",");
+      L.push("        panorama: FOTOS." + s.key + ",");
+      L.push("        hotSpots: [");
+      s.arrows.forEach(function (a) {
+        L.push('          flecha(' + a.yaw + ', "' + a.to + '", "' + a.label + '", ' +
+          (a.targetYaw === null ? "undefined" : a.targetYaw) + ", " + a.pitch + "),");
+      });
+      L.push("        ],");
+      L.push("      },");
+    });
+    L.push("    };");
+    L.push("");
+    L.push("");
+    var a = TEMPLATE.indexOf("    var scenes = {");
+    var b = TEMPLATE.indexOf("    var viewer = pannellum");
+    var out = TEMPLATE.slice(0, a) + L.join("\n") + TEMPLATE.slice(b);
+    return out.replace(/var MODO_AJUSTE\s*=\s*true;/, "var MODO_AJUSTE = false;");
+  }
+
+  $("copy").onclick = function () {
+    if (!TEMPLATE) return;
+    var code = build();
+    var out = $("out");
+    out.value = code;
+    function fallback() {
+      out.style.display = "block";
+      out.select();
+      flash("Selecciona todo el texto de abajo (Ctrl+A) y cópialo (Ctrl+C).");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function () {
+        flash("Copiado. Pégalo en el index.html de GitHub (sustituyendo todo) y haz Commit.");
+      }, fallback);
+    } else fallback();
+  };
+})();
+</script>
+</body>
+</html>
