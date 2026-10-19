@@ -15,19 +15,10 @@
     fotos 360/bem1.jpg, Bem2.jpg, bem3.jpg ... bem8.jpg
     Iconos/avanzar.png
 
-  ¡OJO! GitHub distingue mayúsculas/minúsculas. Si renombras
-  algún archivo o carpeta, cámbialo también en el bloque FOTOS.
-
   MAPA DE CONEXIONES:
     BEM8 (fuera) <-> BEM1 <-> BEM2 <-> BEM3 <-> BEM4 <-> BEM5 <-> BEM6
                                         |
                                       BEM7 (barra)
-
-  CÓMO AJUSTAR LAS FLECHAS:
-    Las flechas ya están colocadas según las fotos. Si alguna queda
-    desplazada, pon MODO_AJUSTE = true, abre la web, haz clic donde
-    quieras la flecha y apunta pitch/yaw (arriba a la izquierda).
-    Vuelve a poner MODO_AJUSTE = false antes de entregar.
 ============================================================= -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.css" />
@@ -119,10 +110,9 @@
 
 <script>
   (function () {
-    var MODO_AJUSTE = false; // true = muestra pitch/yaw al hacer clic
+    var MODO_AJUSTE = false; 
 
-    // Rutas tal cual están en el repo (carpeta "fotos 360" con espacio,
-    // nombres en minúscula salvo Bem2). El espacio va como %20.
+
     var ICON_AVANZAR = "Iconos/avanzar.png";
 
     var FOTOS = {
@@ -250,7 +240,7 @@
       scenes: scenes,
     });
 
-    // ---- Modo ajuste: muestra pitch/yaw donde hagas clic ----
+    
     if (MODO_AJUSTE) {
       var box = document.getElementById("bem-coords");
       box.style.display = "block";
