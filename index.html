@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Recorrido virtual 360 — Bola en Mano</title>
+
+<!-- ============================================================
+  RECORRIDO VIRTUAL 360 — BOLA EN MANO
+  Motor: Pannellum (open source, gratis, vía CDN)
+  Alojado en GitHub Pages (repo BEM-360)
+
+  ESTRUCTURA DE CARPETAS EN EL REPO:
+    index.html
+    fotos 360/bem1.jpg, Bem2.jpg, bem3.jpg ... bem8.jpg
+    Iconos/avanzar.png
+
+  ¡OJO! GitHub distingue mayúsculas/minúsculas. Si renombras
+  algún archivo o carpeta, cámbialo también en el bloque FOTOS.
+
+  MAPA DE CONEXIONES:
+    BEM8 (fuera) <-> BEM1 <-> BEM2 <-> BEM3 <-> BEM4 <-> BEM5 <-> BEM6
+                                        |
+                                      BEM7 (barra)
+
+  CÓMO AJUSTAR LAS FLECHAS:
+    Las flechas ya están colocadas según las fotos. Si alguna queda
+    desplazada, pon MODO_AJUSTE = true, abre la web, haz clic donde
+    quieras la flecha y apunta pitch/yaw (arriba a la izquierda).
+    Vuelve a poner MODO_AJUSTE = false antes de entregar.
+============================================================= -->
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.js"></script>
+
+<style>
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: transparent;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  #bem-panorama {
+    width: 100%;
+    height: 100vh;
+    min-height: 320px;
+    position: relative;
+  }
+
+  .pnlm-hotspot-base { background: none !important; }
+
+  .bem-hotspot {
+    width: 65px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .bem-hotspot-icon {
+    width: 58px;
+    height: auto;
+    filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.85))
+      drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+    animation: bem-pulse 2.2s ease-in-out infinite;
+    transition: transform 0.15s ease;
+  }
+
+  .bem-hotspot:hover .bem-hotspot-icon { transform: scale(1.15); }
+
+  @keyframes bem-pulse {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 1; }
+  }
+
+  .bem-hotspot-label {
+    position: absolute;
+    top: 46px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .bem-hotspot:hover .bem-hotspot-label { opacity: 1; }
+
+  /* Caja de coordenadas (solo en MODO_AJUSTE) */
+  #bem-coords {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.85);
+    color: #7CFC9A;
+    font: 13px/1.4 ui-monospace, Consolas, monospace;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: none;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="bem-panorama">
+  <div id="bem-coords">Haz clic en la imagen…</div>
+</div>
+
+<script>
+  (function () {
+    var MODO_AJUSTE = false; // true = muestra pitch/yaw al hacer clic
+
+    // Rutas tal cual están en el repo (carpeta "fotos 360" con espacio,
+    // nombres en minúscula salvo Bem2). El espacio va como %20.
+    var ICON_AVANZAR = "Iconos/avanzar.png";
+
+    var FOTOS = {
+      "BEM1": "fotos%20360/bem1.jpg",
+      "BEM2": "fotos%20360/Bem2.jpg",
+      "BEM3": "fotos%20360/bem3.jpg",
+      "BEM4": "fotos%20360/bem4.jpg",
+      "BEM5": "fotos%20360/bem5.jpg",
+      "BEM6": "fotos%20360/bem6.jpg",
+      "BEM7": "fotos%20360/bem7.jpg",
+      "BEM8": "fotos%20360/bem8.jpg",
+    };
+
+    function renderIconHotspot(div, args) {
+      div.classList.add("bem-hotspot");
+      div.innerHTML =
+        '<img class="bem-hotspot-icon" src="' + ICON_AVANZAR + '" alt="" />' +
+        '<span class="bem-hotspot-label">' + args.label + "</span>";
+    }
+
+    // Atajo para crear una flecha
+    function flecha(yaw, destino, label, targetYaw, pitch) {
+      var h = {
+        pitch: pitch === undefined ? -30 : pitch,
+        yaw: yaw,
+        type: "scene",
+        sceneId: destino,
+        createTooltipFunc: renderIconHotspot,
+        createTooltipArgs: { label: label },
+      };
+      if (targetYaw !== undefined) h.targetYaw = targetYaw;
+      return h;
+    }
+
+    // flecha(yaw, destino, texto, targetYaw, pitch)
+    var scenes = {
+
+      // Exterior — punto de partida, mirando a la puerta
+      BEM8: {
+        title: "Exterior",
+        yaw: -5,
+        panorama: FOTOS.BEM8,
+        hotSpots: [
+          flecha(-5, "BEM1", "Entrar", 15, -18),
+        ],
+      },
+
+      // Nada más entrar (puerta a -95)
+      BEM1: {
+        title: "Entrada",
+        yaw: 15,
+        panorama: FOTOS.BEM1,
+        hotSpots: [
+          flecha(-95, "BEM8", "Salir", 175, -22),
+          flecha(15, "BEM2", "Avanzar", 20, -25),
+        ],
+      },
+
+      BEM2: {
+        title: "Sala",
+        yaw: 20,
+        panorama: FOTOS.BEM2,
+        hotSpots: [
+          flecha(-105, "BEM1", "Volver", -95, -22),
+          flecha(40, "BEM3", "Avanzar", 30, -25),
+        ],
+      },
+
+      // Cruce: barra delante (BEM7), billar a la derecha (BEM4)
+      BEM3: {
+        title: "Frente a la barra",
+        yaw: 30,
+        panorama: FOTOS.BEM3,
+        hotSpots: [
+          flecha(-140, "BEM2", "Volver", -160, -25),
+          flecha(0, "BEM7", "Ir a la barra", 0, -22),
+          flecha(55, "BEM4", "Ir al billar", 55, -25),
+        ],
+      },
+
+      BEM4: {
+        title: "Zona de billar",
+        yaw: 55,
+        panorama: FOTOS.BEM4,
+        hotSpots: [
+          flecha(-60, "BEM3", "Volver", -125, -25),
+          flecha(65, "BEM5", "Avanzar", 95, -22),
+        ],
+      },
+
+      // Cámara sobre la mesa de billar
+      BEM5: {
+        title: "Mesa de billar",
+        yaw: 95,
+        panorama: FOTOS.BEM5,
+        hotSpots: [
+          flecha(-45, "BEM4", "Volver", -125, -12),
+          flecha(95, "BEM6", "Avanzar", 15, -12),
+        ],
+      },
+
+      // Segunda sala de billar — final del recorrido
+      BEM6: {
+        title: "Sala de billar",
+        yaw: 15,
+        panorama: FOTOS.BEM6,
+        hotSpots: [
+          flecha(-170, "BEM5", "Volver", -85, -15),
+        ],
+      },
+
+      // Barra — solo conecta con BEM3
+      BEM7: {
+        title: "Barra",
+        yaw: 0,
+        panorama: FOTOS.BEM7,
+        hotSpots: [
+          flecha(170, "BEM3", "Volver", 55, -28),
+        ],
+      },
+    };
+
+    var viewer = pannellum.viewer("bem-panorama", {
+      default: {
+        firstScene: "BEM8",
+        author: "Bola en Mano",
+        sceneFadeDuration: 800,
+        autoLoad: true,
+        compass: false,
+      },
+      scenes: scenes,
+    });
+
+    // ---- Modo ajuste: muestra pitch/yaw donde hagas clic ----
+    if (MODO_AJUSTE) {
+      var box = document.getElementById("bem-coords");
+      box.style.display = "block";
+      document.getElementById("bem-panorama").addEventListener("click", function (e) {
+        var c = viewer.mouseEventToCoords(e);
+        box.textContent =
+          viewer.getScene() +
+          "  →  pitch: " + Math.round(c[0]) +
+          ", yaw: " + Math.round(c[1]);
+      });
+    }
+  })();
+</script>
+</body>
+</html>
